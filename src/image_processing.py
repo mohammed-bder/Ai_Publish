@@ -9,7 +9,7 @@ def extract_text(image_path: str) -> str:
     text = pytesseract.image_to_string(image)
     return text
 
-def clean_extracted_text_img(file_path):
+def read_image(file_path):
     text = extract_text(file_path)
     cleaned_text = re.sub(r"[\[\]{}(),:\*]", "",text) 
     
