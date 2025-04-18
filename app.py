@@ -6,7 +6,8 @@ from pathlib import Path
 from src.image_processing import read_image, clean_extracted_text_img
 from src.extract_values import extract_medical_data_from_full_blood_test
 from src.text_processing import clean_extracted_text_txt
-import PyPDF2
+from pypdf import PdfReader
+
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -42,7 +43,7 @@ def process_pdf_file(file_bytes: bytes):
         tmp.write(file_bytes)
         tmp_path = tmp.name
     with open(tmp_path, "rb") as f:
-        reader = PyPDF2.PdfReader(f)
+        reader = PdfReader(f)
         clean_text = "".join([page.extract_text() or "" for page in reader.pages])
     os.remove(tmp_path)
     return clean_text
