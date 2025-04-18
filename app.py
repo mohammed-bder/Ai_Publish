@@ -13,7 +13,7 @@ from pypdf import PdfReader
 app = FastAPI()
 
 # Load the trained model once when the app starts
-model = joblib.load("decision_tree_model.pkl")
+model = joblib.load('main/decision_tree_model.pkl')
 
 # Define label mapping
 label_mapping = ["anemic", "infection", "autoimmune disease", "injury"]
