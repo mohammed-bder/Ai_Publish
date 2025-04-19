@@ -24,8 +24,7 @@ def clean_extracted_text_pdf(pdf_path):
     return cleaned_text
 
 # removing {}[](),:* from a txt
-def clean_extracted_text_txt(txt_path):
-    text = read_txt(txt_path)
-    cleaned_text = re.sub(r"[\[\]{}(),:\*]", "",text)
-    
+def clean_extracted_text_txt(file_bytes: bytes) -> str:
+    text = file_bytes.decode("utf-8")  # Decode bytes to string
+    cleaned_text = re.sub(r"[\[\]{}(),:\*]", "", text)
     return cleaned_text

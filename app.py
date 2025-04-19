@@ -1,3 +1,4 @@
+
 from fastapi import FastAPI, UploadFile, File, HTTPException
 import os
 import joblib
@@ -12,6 +13,7 @@ from pypdf import PdfReader
 # Initialize FastAPI app
 app = FastAPI()
 
+#print("✅ app.py is running...")
 # Load the trained model once when the app starts
 model = joblib.load('main/decision_tree_model.pkl')
 
@@ -32,8 +34,7 @@ def process_image_file(file_bytes: bytes):
     with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp:
         tmp.write(file_bytes)
         tmp_path = tmp.name
-    image = read_image(tmp_path)
-    clean_text = clean_extracted_text_img(image)
+    clean_text = clean_extracted_text_img(tmp_path)
     os.remove(tmp_path)
     return clean_text
 
@@ -51,7 +52,7 @@ def process_pdf_file(file_bytes: bytes):
 # Process uploaded TXT file
 def process_txt_file(file_bytes: bytes):
     text = file_bytes.decode("utf-8")
-    return clean_extracted_text_txt(text)
+    return clean_extracted_text_txt(file_bytes)
 
 # Unified handler
 def process_uploaded_file(file_bytes: bytes, filename: str):
@@ -61,17 +62,28 @@ def process_uploaded_file(file_bytes: bytes, filename: str):
     elif ext == ".pdf":
         return process_pdf_file(file_bytes)
     elif ext == ".txt":
-        return process_txt_file(file_bytes)
+        return clean_extracted_text_txt(file_bytes)
     else:
         raise HTTPException(status_code=400, detail="Unsupported file type")
 
 # FastAPI endpoint
+@app.get("/ping")
+async def ping():
+    return {"status": "ok"}
+
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
-    file_bytes = await file.read()
+    #print("🚀 Endpoint hit!")
     try:
+        file_bytes = await file.read()
+        #print(f"Received filename: {file.filename}")
+        #print(f"First 100 bytes: {file_bytes[:100]}")  # Just to inspect
+
         clean_text = process_uploaded_file(file_bytes, file.filename)
         predictions = predict_condition(clean_text)
-        return {"extracted_text": clean_text, "predictions": predictions}
+
+        return {"predictions": predictions}
     except Exception as e:
+        print("🔥 Error:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
+    
