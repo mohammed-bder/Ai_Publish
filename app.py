@@ -9,8 +9,6 @@ from src.extract_values import extract_medical_data_from_full_blood_test
 from src.text_processing import clean_extracted_text_txt
 from pypdf import PdfReader
 
-from fastapi import APIRouter
-import subprocess
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -90,13 +88,3 @@ async def predict(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
     
 
-
-
-
-@app.get("/tesseract-version", tags=["Diagnostics"])
-def get_tesseract_version():
-    try:
-        version = subprocess.check_output(["tesseract", "--version"]).decode().split("\n")[0]
-        return {"tesseract_version": version}
-    except Exception as e:
-        return {"error": str(e)}
