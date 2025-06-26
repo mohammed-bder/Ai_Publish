@@ -7,13 +7,20 @@ from pathlib import Path
 from src.image_processing import read_image, clean_extracted_text_img
 from src.extract_values import extract_medical_data_from_full_blood_test
 from src.text_processing import clean_extracted_text_txt
+
+# hr model
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+from typing import Annotated
+from heart_rate.ppg_model import predict_hr_condition  # ✅ Import your model logic
+
 from pypdf import PdfReader
 
 
 # Initialize FastAPI app
 app = FastAPI()
 
-#print("✅ app.py is running...")
+#print("app.py is running...")
 # Load the trained model once when the app starts
 model = joblib.load('main/decision_tree_model.pkl')
 
@@ -66,6 +73,12 @@ def process_uploaded_file(file_bytes: bytes, filename: str):
     else:
         raise HTTPException(status_code=400, detail="Unsupported file type")
 
+# Pydantic model for request body
+class HRInput(BaseModel):
+    age: Annotated[int, Field(gt=0, lt=120)]
+    hr: Annotated[float, Field(gt=30, lt=220)]
+    gender: Annotated[int, Field(ge=0, le=1)]
+
 # FastAPI endpoint
 @app.get("/ping")
 async def ping():
@@ -73,7 +86,7 @@ async def ping():
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
-    #print("🚀 Endpoint hit!")
+    #print("Endpoint hit!")
     try:
         file_bytes = await file.read()
         #print(f"Received filename: {file.filename}")
@@ -84,7 +97,13 @@ async def predict(file: UploadFile = File(...)):
 
         return {"predictions": predictions}
     except Exception as e:
-        print("🔥 Error:", str(e))
+        print("Error:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
     
-
+@app.post("/predict-hr")
+async def predict_heart_rate(input: HRInput):
+    try:
+        result = predict_hr_condition(input.age, input.hr, input.gender)
+        return {"prediction": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
