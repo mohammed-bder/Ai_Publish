@@ -13,7 +13,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from typing import Annotated
 from heart_rate.ppg_model import predict_hr_condition  # ✅ Import your model logic
-
+from heart_rate.onnx_hr_model import predict_from_onnx
 from pypdf import PdfReader
 
 
@@ -76,8 +76,12 @@ def process_uploaded_file(file_bytes: bytes, filename: str):
 # Pydantic model for request body
 class HRInput(BaseModel):
     age: Annotated[int, Field(gt=0, lt=120)]
-    hr: Annotated[float, Field(gt=30, lt=220)]
+    hr: Annotated[float, Field(gt=0, lt=300)]
     gender: Annotated[int, Field(ge=0, le=1)]
+
+class HRRInput(BaseModel):
+    age: Annotated[int, Field(gt=1, lt=200)]
+    hr: Annotated[float, Field(gt=0, lt=300)]
 
 # FastAPI endpoint
 @app.get("/ping")
@@ -104,6 +108,14 @@ async def predict(file: UploadFile = File(...)):
 async def predict_heart_rate(input: HRInput):
     try:
         result = predict_hr_condition(input.age, input.hr, input.gender)
+        return {"prediction": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.post("/predict-hr-onnx")
+async def predict_heart_rate_onnx(input: HRRInput):
+    try:
+        result = predict_from_onnx(input.age, input.hr)
         return {"prediction": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
